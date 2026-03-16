@@ -2,7 +2,7 @@
 
 As I had A number of projects using data from other domains and I grew tired of having to use 3rd CORS proxies, which always seems to be unstable, slow, unsafe and short-lived. So, I decided to build my own.
 
-I built EveryOrigin using Next.js and Next.js Api routes as back-end and hosted it on Netlify. The service is free and open-source and was inspired by similar services like [allorigins.win](https://allorigins.win) and [whateverorigin.org](https://whateverorigin.org).
+I built EveryOrigin using Next.js and Next.js Api routes as back-end and hosted it on Vercel. The service is free and open-source.
 
 The service is completely free to use and doesn't require any API key or rate limit.
 
@@ -25,4 +25,4 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 ## Deployment
 
-The service is hosted on Netlify and is automatically deployed when changes are pushed to the `main` branch.
+The service is hosted on Vercel and is automatically deployed when changes are pushed to the `main` branch.

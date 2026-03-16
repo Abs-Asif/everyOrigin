@@ -13,7 +13,7 @@ import { ClipboardDocumentListIcon, XMarkIcon } from "@heroicons/react/20/solid"
 const inter = Inter({ subsets: ["latin"] });
 
 const defaultUrl = "google.nl";
-const baseUrl = "everyorigin.jwvbremen.nl";
+const baseUrl = "every-origin-ecru.vercel.app";
 
 export const baseStyle = { transitionDuration: "650ms", transitionTimingFunction: "ease-out" };
 export const hiddenStyle = { opacity: 0, transform: "translateY(3em)", filter: "blur(4px)" };
@@ -78,21 +78,10 @@ export default function Home() {
         <title>EveryOrigin</title>
         <meta
           name="description"
-          content="
-        EveryOrigin is a free CORS proxy that allows you to access the HTML content of any website from any origin.
-        Free and open source. No Api keyrequired. No rate limit. No annoying ads. No tracking. No bullshit. Just a simple CORS proxy. Enjoy!
-        "
+          content="EveryOrigin is a free CORS proxy that allows you to access the HTML content of any website from any origin. Free and open source."
         />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <header className="absolute top-0 flex w-full justify-end p-2 ">
-        <p>
-          Authored by:&nbsp;
-          <a href="https://jwvbremen.nl" rel=" noopener noreferrer" target="_blank">
-            Jan-Willem van Bremen
-          </a>
-        </p>
-      </header>
 
       <div className="relative m-auto place-items-center after:absolute after:top-0 after:-z-20 after:h-[180px] after:w-[180px] after:animate-[pulse_10s_ease-in-out_infinite] after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] after:sm:w-[360px] before:lg:h-[360px] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700/10 after:dark:from-sky-900 after:dark:via-[#0141ff]/40">
         <h1 className="inline-block text-4xl font-bold sm:text-6xl" style={{ overflowWrap: "anywhere" }}>
@@ -101,54 +90,50 @@ export default function Home() {
         <h2 className="text-xl font-bold sm:text-3xl">The free CORS proxy</h2>
       </div>
 
-      <div className="flex flex-col items-center gap-8">
-        <p>
-          EveryOrigin is a free CORS proxy that allows you to access any website from any origin. Inspired by{" "}
-          <a href="https://allorigins.win" target="_blank">
-            allorigins.win
-          </a>{" "}
-          and{" "}
-          <a href="https://whateverorigin.org" target="_blank">
-            whateverorigin.org
-          </a>
-          {", "}
-          which was a humble open source clone of{" "}
-          <a href=" https://anyorigin.com" target="_blank">
-            AnyOrigin.com
-          </a>
-          . All of them are either dead 🪦 or dead slow now. 🩻 So I decided to make my own version. It's free and open
-          source. No Api key required. No rate limit. No annoying ads. No tracking. No bullshit. Just a simple CORS
-          proxy. Enjoy!
-        </p>
-      </div>
-
-      <div className="font-sans">
-        <h2 className="text-4xl font-bold">Usage</h2>
-        <h3 className="text-lg font-bold">Fill in the URL you want to fetch</h3>
-        <div className="flex flex-col rounded bg-neutral-100 p-2 text-neutral-900 shadow-md xs:flex-row">
-          <span style={{ overflowWrap: "anywhere" }}>{`https://${baseUrl}/get?url=`}</span>
-          <span
-            className={`flex-grow ${
-              url === defaultUrl ? "font-bold italic" : ""
-            } outline-none empty:before:cursor-text empty:before:text-neutral-400 empty:before:content-['Enter_website_URL']`}
-            contentEditable
-            suppressContentEditableWarning
-            onInput={(e) => setUrl(e.currentTarget.textContent.replaceAll(" ", "").replaceAll("\n", ""))}
-            onKeyDown={async (e) => {
-              if (e.key !== "Enter") return;
-              e.preventDefault();
-              await fetchHtml();
-            }}
-          >
-            {defaultUrl}
-          </span>
-
-          <button
-            className="-m-2 mt-0 rounded-b bg-blue-600 px-4 font-bold text-neutral-50 transition-colors hover:bg-blue-800 active:bg-blue-500 xs:-mt-2 xs:ml-2 xs:rounded-r xs:rounded-bl-none"
-            onClick={fetchHtml}
-          >
-            Fetch
-          </button>
+      <div className="w-full max-w-4xl font-sans">
+        <h2 className="mb-4 text-4xl font-bold">Usage</h2>
+        <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-xl dark:border-neutral-800 dark:bg-neutral-900">
+          <div className="flex items-center gap-2 border-b border-neutral-200 bg-neutral-50 px-4 py-2 dark:border-neutral-800 dark:bg-neutral-800/50">
+            <div className="flex gap-1.5">
+              <div className="h-3 w-3 rounded-full bg-red-400"></div>
+              <div className="h-3 w-3 rounded-full bg-yellow-400"></div>
+              <div className="h-3 w-3 rounded-full bg-green-400"></div>
+            </div>
+            <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">API Explorer</span>
+          </div>
+          <div className="p-6">
+            <h3 className="mb-4 text-lg font-semibold">Enter the URL to proxy</h3>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <div className="group flex flex-grow items-center overflow-hidden rounded-lg border border-neutral-300 bg-neutral-50 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 dark:border-neutral-700 dark:bg-neutral-800">
+                <span className="hidden whitespace-nowrap bg-neutral-100 px-3 py-2 text-sm font-mono text-neutral-500 sm:block dark:bg-neutral-700 dark:text-neutral-400">
+                  GET
+                </span>
+                <span className="whitespace-nowrap px-3 py-2 text-sm font-mono text-neutral-600 dark:text-neutral-300">
+                  {`https://${baseUrl}/get?url=`}
+                </span>
+                <input
+                  type="text"
+                  className="w-full bg-transparent py-2 pr-3 font-mono text-sm outline-none placeholder:text-neutral-400"
+                  placeholder="google.com"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value.trim())}
+                  onKeyDown={async (e) => {
+                    if (e.key === "Enter") await fetchHtml();
+                  }}
+                />
+              </div>
+              <button
+                className="rounded-lg bg-blue-600 px-6 py-2 font-bold text-white transition-all hover:bg-blue-700 active:scale-95 disabled:opacity-50"
+                onClick={fetchHtml}
+                disabled={loading}
+              >
+                {loading ? "Fetching..." : "Execute"}
+              </button>
+            </div>
+            <p className="mt-3 text-xs text-neutral-500 dark:text-neutral-400">
+              Tip: You can omit http:// or https://, we'll add it for you.
+            </p>
+          </div>
         </div>
       </div>
 

@@ -12,7 +12,7 @@ import { ClipboardDocumentListIcon, XMarkIcon } from "@heroicons/react/20/solid"
 
 const inter = Inter({ subsets: ["latin"] });
 
-const defaultUrl = "google.nl";
+const defaultUrl = "";
 
 export const baseStyle = { transitionDuration: "650ms", transitionTimingFunction: "ease-out" };
 export const hiddenStyle = { opacity: 0, transform: "translateY(3em)", filter: "blur(4px)" };
@@ -22,6 +22,7 @@ export default function Home() {
   const [metadata, setMetadata] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [fetchTime, setFetchTime] = useState(null);
   const [key, setKey] = useState(Date.now());
   const [host, setHost] = useState("");
   const [protocol, setProtocol] = useState("https:");
@@ -44,6 +45,7 @@ export default function Home() {
 
   const fetchData = async () => {
     setError(null);
+    setFetchTime(null);
     const start = Date.now();
     try {
       if (!url) throw new Error("URL is required");
@@ -51,10 +53,20 @@ export default function Home() {
       setLoading(true);
       const response = await fetch(`/api/get?url=${encodeURIComponent(validUrl.toString())}`);
 
+      if (!response.ok) {
+        let errorMessage = `Fetch failed with status ${response.status}: ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          if (errorData.error) errorMessage = errorData.error;
+        } catch (e) {
+          // Fallback to default message if JSON parsing fails
+        }
+        throw new Error(errorMessage);
+      }
+
       const contentType = response.headers.get("content-type");
       if (contentType && contentType.includes("application/json")) {
         const data = await response.json();
-        if (data.error) throw new Error(data.error);
         setMetadata(data);
       } else if (contentType && contentType.startsWith("image/")) {
         // It's a direct image, we can show it as well
@@ -72,6 +84,7 @@ export default function Home() {
     } finally {
       const end = Date.now();
       const duration = end - start;
+      setFetchTime(duration);
       if (duration < 1000) await new Promise((resolve) => setTimeout(resolve, 1000 - duration));
       setLoading(false);
     }
@@ -140,6 +153,14 @@ export default function Home() {
                     if (e.key === "Enter") await fetchData();
                   }}
                 />
+                {url && (
+                  <button
+                    className="mr-2 rounded-full p-1 text-neutral-400 hover:bg-neutral-200 hover:text-neutral-600 dark:hover:bg-neutral-700 dark:hover:text-neutral-200"
+                    onClick={() => setUrl("")}
+                  >
+                    <XMarkIcon className="h-5 w-5" />
+                  </button>
+                )}
               </div>
               <button
                 className="rounded-lg bg-blue-600 px-6 py-2 font-bold text-white transition-all hover:bg-blue-700 active:scale-95 disabled:opacity-50"
@@ -149,40 +170,15 @@ export default function Home() {
                 {loading ? "Fetching..." : "Execute"}
               </button>
             </div>
-            <p className="mt-3 text-xs text-neutral-500 dark:text-neutral-400">
-              Tip: Enter any news article URL or image URL.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="w-full max-w-4xl font-sans">
-        <h2 className="mb-4 text-2xl font-bold sm:text-4xl">Documentation</h2>
-        <div className="grid gap-4 sm:grid-cols-2 sm:gap-6">
-          <div className="rounded-xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-md dark:border-neutral-800 dark:bg-neutral-900">
-            <h3 className="mb-3 text-xl font-bold text-blue-600 dark:text-blue-400">1. Image Mode</h3>
-            <p className="mb-4 text-sm text-neutral-600 dark:text-neutral-400">
-              If the URL points to an image (PNG, JPG, SVG, etc.), NEWSOrigin acts as a direct proxy, returning the image
-              binary with the correct headers.
-            </p>
-            <div className="rounded bg-neutral-100 p-2 text-xs font-mono dark:bg-neutral-800">
-              GET /get?url=example.com/image.png
-            </div>
-          </div>
-          <div className="rounded-xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-md dark:border-neutral-800 dark:bg-neutral-900">
-            <h3 className="mb-3 text-xl font-bold text-blue-600 dark:text-blue-400">2. News Mode</h3>
-            <p className="mb-4 text-sm text-neutral-600 dark:text-neutral-400">
-              For web pages, NEWSOrigin extracts rich metadata including Open Graph and Twitter tags, returning a comprehensive JSON object.
-            </p>
-            <div className="rounded bg-neutral-100 p-3 text-xs font-mono dark:bg-neutral-800 overflow-x-auto">
-              <pre>{JSON.stringify({
-                title: "...",
-                description: "...",
-                siteName: "...",
-                image: "...",
-                favicon: "...",
-                url: "..."
-              }, null, 2)}</pre>
+            <div className="mt-3 flex items-center justify-between">
+              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                Tip: Enter any news article URL or image URL.
+              </p>
+              {fetchTime && (
+                <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
+                  Time: {fetchTime >= 1000 ? `${(fetchTime / 1000).toFixed(2)}s` : `${fetchTime}ms`}
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -260,6 +256,52 @@ export default function Home() {
           </div>
         </TransitionScroll>
       )}
+
+      <div className="w-full max-w-4xl font-sans">
+        <h2 className="mb-4 text-2xl font-bold sm:text-4xl">Documentation</h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 sm:gap-6">
+          <div className="rounded-xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-md dark:border-neutral-800 dark:bg-neutral-900">
+            <h3 className="mb-3 text-xl font-bold text-blue-600 dark:text-blue-400">1. Image Mode</h3>
+            <p className="mb-4 text-sm text-neutral-600 dark:text-neutral-400">
+              If the URL points to an image (PNG, JPG, SVG, etc.), NEWSOrigin acts as a direct proxy, returning the image
+              binary with the correct headers.
+            </p>
+            <div className="rounded bg-neutral-100 p-2 text-xs font-mono dark:bg-neutral-800">
+              GET /get?url=example.com/image.png
+            </div>
+          </div>
+          <div className="rounded-xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-md dark:border-neutral-800 dark:bg-neutral-900">
+            <h3 className="mb-3 text-xl font-bold text-blue-600 dark:text-blue-400">2. News Mode</h3>
+            <p className="mb-4 text-sm text-neutral-600 dark:text-neutral-400">
+              For web pages, NEWSOrigin extracts rich metadata including Open Graph and Twitter tags, returning a comprehensive JSON object.
+            </p>
+            <div className="rounded bg-neutral-100 p-3 text-xs font-mono dark:bg-neutral-800 overflow-x-auto">
+              <pre>{JSON.stringify({
+                title: "...",
+                description: "...",
+                siteName: "...",
+                image: "...",
+                favicon: "...",
+                url: "..."
+              }, null, 2)}</pre>
+            </div>
+          </div>
+          <div className="rounded-xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-md dark:border-neutral-800 dark:bg-neutral-900 sm:col-span-2 lg:col-span-1">
+            <h3 className="mb-3 text-xl font-bold text-blue-600 dark:text-blue-400">3. Field Filtering</h3>
+            <p className="mb-4 text-sm text-neutral-600 dark:text-neutral-400">
+              Request specific data fields by providing a comma-separated <code>fields</code> parameter.
+            </p>
+            <div className="rounded bg-neutral-100 p-3 text-xs font-mono dark:bg-neutral-800 overflow-x-auto">
+              <pre>GET /get?url=...&fields=title,favicon</pre>
+              <pre className="mt-2">{JSON.stringify({
+                title: "...",
+                favicon: "..."
+              }, null, 2)}</pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </main>
   );
 }

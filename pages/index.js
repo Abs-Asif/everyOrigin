@@ -13,7 +13,6 @@ import { ClipboardDocumentListIcon, XMarkIcon } from "@heroicons/react/20/solid"
 const inter = Inter({ subsets: ["latin"] });
 
 const defaultUrl = "google.nl";
-const baseUrl = "every-origin-ecru.vercel.app";
 
 export const baseStyle = { transitionDuration: "650ms", transitionTimingFunction: "ease-out" };
 export const hiddenStyle = { opacity: 0, transform: "translateY(3em)", filter: "blur(4px)" };
@@ -24,10 +23,20 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [key, setKey] = useState(Date.now());
+  const [host, setHost] = useState("");
+  const [protocol, setProtocol] = useState("https:");
   const router = useRouter();
-  const sampleCode = `const response = await fetch("https://${baseUrl}/get?url=${encodeURIComponent(
-    url,
-  )}");\nconst result = await response.json();`;
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setHost(window.location.host);
+      setProtocol(window.location.protocol);
+    }
+  }, []);
+
+  const sampleCode = `const response = await fetch("${protocol}//${
+    host || "every-origin-ecru.vercel.app"
+  }/get?url=${encodeURIComponent(url)}");\nconst result = await response.json();`;
 
   useEffect(() => {
     hljs.highlightAll();
@@ -113,7 +122,7 @@ export default function Home() {
             <h3 className="mb-4 text-lg font-semibold">Enter the URL to proxy</h3>
             <div className="mb-4 flex items-center gap-2 rounded-lg border border-neutral-200 bg-neutral-50 p-3 font-mono text-sm text-neutral-600 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-400">
               <span className="font-bold text-blue-600 dark:text-blue-400">API Endpoint:</span>
-              <span className="break-all">{`https://${baseUrl}/get?url=`}</span>
+              <span className="break-all">{`${protocol}//${host || "every-origin-ecru.vercel.app"}/get?url=`}</span>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row">
               <div className="group flex flex-grow items-center overflow-hidden rounded-lg border border-neutral-300 bg-neutral-50 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 dark:border-neutral-700 dark:bg-neutral-800">
@@ -197,9 +206,27 @@ export default function Home() {
                   </div>
                 )}
                 <div className="flex flex-col justify-center">
-                  <h3 className="mb-2 text-2xl font-bold">{metadata.title || "No title found"}</h3>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                    Extracted from Open Graph tags or page title.
+                  <div className="mb-2 flex items-center gap-2">
+                    {metadata.favicon && (
+                      <img
+                        src={metadata.favicon}
+                        alt="favicon"
+                        className="h-5 w-5"
+                        onError={(e) => (e.target.style.display = "none")}
+                      />
+                    )}
+                    {metadata.siteName && (
+                      <span className="text-sm font-medium text-blue-600 dark:text-blue-400">{metadata.siteName}</span>
+                    )}
+                  </div>
+                  <h3 className="mb-2 text-2xl font-bold leading-tight">{metadata.title || "No title found"}</h3>
+                  {metadata.description && (
+                    <p className="mb-4 text-sm text-neutral-600 dark:text-neutral-400 line-clamp-3">
+                      {metadata.description}
+                    </p>
+                  )}
+                  <p className="text-xs text-neutral-500 dark:text-neutral-500 italic break-all">
+                    Source: {metadata.url || url}
                   </p>
                 </div>
               </div>

@@ -41,19 +41,57 @@ export default async function handler(req, res) {
     const html = await response.text();
     const $ = cheerio.load(html);
 
-    const title = $('meta[property="og:title"]').attr("content") || $("title").text() || "";
-    let ogImage = $('meta[property="og:image"]').attr("content") || "";
+    const title =
+      $('meta[property="og:title"]').attr("content") ||
+      $('meta[name="twitter:title"]').attr("content") ||
+      $("title").text() ||
+      "";
 
-    if (ogImage && !ogImage.startsWith("http")) {
-      const urlObj = new URL(url);
-      ogImage = new URL(ogImage, urlObj.origin).toString();
-    }
+    const description =
+      $('meta[property="og:description"]').attr("content") ||
+      $('meta[name="twitter:description"]').attr("content") ||
+      $('meta[name="description"]').attr("content") ||
+      "";
+
+    const siteName = $('meta[property="og:site_name"]').attr("content") || "";
+
+    let ogImage =
+      $('meta[property="og:image"]').attr("content") || $('meta[name="twitter:image"]').attr("content") || "";
+
+    let favicon =
+      $('link[rel="apple-touch-icon"]').attr("href") ||
+      $('link[rel="shortcut icon"]').attr("href") ||
+      $('link[rel="icon"]').attr("href") ||
+      "/favicon.ico";
+
+    const urlObj = new URL(url);
+
+    const resolveUrl = (link) => {
+      if (!link) return "";
+      if (link.startsWith("http")) return link;
+      try {
+        return new URL(link, urlObj.origin).toString();
+      } catch (e) {
+        return "";
+      }
+    };
+
+    ogImage = resolveUrl(ogImage);
+    favicon = resolveUrl(favicon);
 
     const host = req.headers.host;
     const protocol = req.headers["x-forwarded-proto"] || "http";
     const proxiedOgImage = ogImage ? `${protocol}://${host}/get?url=${encodeURIComponent(ogImage)}` : "";
+    const proxiedFavicon = favicon ? `${protocol}://${host}/get?url=${encodeURIComponent(favicon)}` : "";
 
-    res.status(200).json({ title, image: proxiedOgImage });
+    res.status(200).json({
+      title,
+      description,
+      siteName,
+      image: proxiedOgImage,
+      favicon: proxiedFavicon,
+      url,
+    });
   } catch (error) {
     console.error("Error fetching content:", error);
     res.status(500).json({ error: error.message || "Internal Server Error" });

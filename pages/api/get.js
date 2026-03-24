@@ -2,7 +2,7 @@ import * as cheerio from "cheerio";
 
 export default async function handler(req, res) {
   const { method } = req;
-  let { url } = req.query;
+  let { url, fields } = req.query;
 
   // Set CORS headers
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -84,14 +84,27 @@ export default async function handler(req, res) {
     const proxiedOgImage = ogImage ? `${protocol}://${host}/get?url=${encodeURIComponent(ogImage)}` : "";
     const proxiedFavicon = favicon ? `${protocol}://${host}/get?url=${encodeURIComponent(favicon)}` : "";
 
-    res.status(200).json({
+    const responseData = {
       title,
       description,
       siteName,
       image: proxiedOgImage,
       favicon: proxiedFavicon,
       url,
-    });
+    };
+
+    if (fields) {
+      const fieldList = fields.split(",").map((f) => f.trim());
+      const filteredData = {};
+      fieldList.forEach((field) => {
+        if (Object.prototype.hasOwnProperty.call(responseData, field)) {
+          filteredData[field] = responseData[field];
+        }
+      });
+      return res.status(200).json(filteredData);
+    }
+
+    res.status(200).json(responseData);
   } catch (error) {
     console.error("Error fetching content:", error);
     res.status(500).json({ error: error.message || "Internal Server Error" });

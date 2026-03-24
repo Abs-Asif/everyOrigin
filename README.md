@@ -27,6 +27,14 @@ Returns a JSON object with the page's metadata.
 GET /get?url=https://news.ycombinator.com
 ```
 
+### 3. Field Filtering
+
+Ask for specific data fields by providing a `fields` parameter (comma-separated).
+
+```bash
+GET /get?url=https://news.ycombinator.com&fields=title,favicon
+```
+
 **Response Format:**
 
 ```json

@@ -13,7 +13,6 @@ import { ClipboardDocumentListIcon, XMarkIcon } from "@heroicons/react/20/solid"
 const inter = Inter({ subsets: ["latin"] });
 
 const defaultUrl = "google.nl";
-const baseUrl = "every-origin-ecru.vercel.app";
 
 export const baseStyle = { transitionDuration: "650ms", transitionTimingFunction: "ease-out" };
 export const hiddenStyle = { opacity: 0, transform: "translateY(3em)", filter: "blur(4px)" };
@@ -24,10 +23,20 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [key, setKey] = useState(Date.now());
+  const [host, setHost] = useState("");
+  const [protocol, setProtocol] = useState("https:");
   const router = useRouter();
-  const sampleCode = `const response = await fetch("https://${baseUrl}/get?url=${encodeURIComponent(
-    url,
-  )}");\nconst result = await response.json();`;
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setHost(window.location.host);
+      setProtocol(window.location.protocol);
+    }
+  }, []);
+
+  const sampleCode = `const response = await fetch("${protocol}//${
+    host || "every-origin-ecru.vercel.app"
+  }/get?url=${encodeURIComponent(url)}");\nconst result = await response.json();`;
 
   useEffect(() => {
     hljs.highlightAll();
@@ -80,7 +89,7 @@ export default function Home() {
 
   return (
     <main
-      className={`flex min-h-screen flex-col items-center justify-between gap-8 p-4 pt-12 text-neutral-900 sm:p-24 dark:text-neutral-100 ${inter.className}`}
+      className={`flex min-h-screen flex-col items-center justify-between gap-6 p-4 pt-10 text-neutral-900 sm:gap-12 sm:p-12 md:p-24 dark:text-neutral-100 ${inter.className}`}
     >
       <Head>
         <title>NEWSOrigin</title>
@@ -91,17 +100,19 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <div className="relative m-auto place-items-center after:absolute after:top-0 after:-z-20 after:h-[180px] after:w-[180px] after:animate-[pulse_10s_ease-in-out_infinite] after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] after:sm:w-[360px] before:lg:h-[360px] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700/10 after:dark:from-sky-900 after:dark:via-[#0141ff]/40">
-        <h1 className="inline-block text-4xl font-bold sm:text-6xl" style={{ overflowWrap: "anywhere" }}>
+      <div className="relative m-auto flex flex-col items-center after:absolute after:top-0 after:-z-20 after:h-[180px] after:w-[180px] after:animate-[pulse_10s_ease-in-out_infinite] after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] after:sm:w-[360px] before:lg:h-[360px] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700/10 after:dark:from-sky-900 after:dark:via-[#0141ff]/40">
+        <h1 className="text-center text-4xl font-extrabold tracking-tight sm:text-6xl" style={{ overflowWrap: "anywhere" }}>
           NEWSOrigin
         </h1>
-        <h2 className="text-xl font-bold sm:text-3xl">Free CORS proxy for news</h2>
+        <h2 className="mt-2 text-center text-lg font-medium opacity-80 sm:text-2xl md:text-3xl">
+          Free CORS proxy for news
+        </h2>
       </div>
 
       <div className="w-full max-w-4xl font-sans">
-        <h2 className="mb-4 text-4xl font-bold">Usage</h2>
-        <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-xl dark:border-neutral-800 dark:bg-neutral-900">
-          <div className="flex items-center gap-2 border-b border-neutral-200 bg-neutral-50 px-4 py-2 dark:border-neutral-800 dark:bg-neutral-800/50">
+        <h2 className="mb-4 text-2xl font-bold sm:text-4xl">Usage</h2>
+        <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-lg dark:border-neutral-800 dark:bg-neutral-900">
+          <div className="flex items-center gap-2 border-b border-neutral-200 bg-neutral-50 px-3 py-2 sm:px-4 dark:border-neutral-800 dark:bg-neutral-800/50">
             <div className="flex gap-1.5">
               <div className="h-3 w-3 rounded-full bg-red-400"></div>
               <div className="h-3 w-3 rounded-full bg-yellow-400"></div>
@@ -109,13 +120,15 @@ export default function Home() {
             </div>
             <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">API Explorer</span>
           </div>
-          <div className="p-6">
-            <h3 className="mb-4 text-lg font-semibold">Enter the URL to proxy</h3>
-            <div className="mb-4 flex items-center gap-2 rounded-lg border border-neutral-200 bg-neutral-50 p-3 font-mono text-sm text-neutral-600 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-400">
-              <span className="font-bold text-blue-600 dark:text-blue-400">API Endpoint:</span>
-              <span className="break-all">{`https://${baseUrl}/get?url=`}</span>
+          <div className="p-4 sm:p-6">
+            <h3 className="mb-4 text-base font-semibold sm:text-lg">Enter the URL to proxy</h3>
+            <div className="mb-4 flex flex-col gap-1 rounded-lg border border-neutral-200 bg-neutral-50 p-3 font-mono text-xs text-neutral-600 sm:flex-row sm:items-center sm:gap-2 sm:text-sm dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-400">
+              <span className="font-bold text-blue-600 dark:text-blue-400 shrink-0">API Endpoint:</span>
+              <span className="break-all overflow-hidden text-ellipsis">{`${protocol}//${
+                host || "every-origin-ecru.vercel.app"
+              }/get?url=`}</span>
             </div>
-            <div className="flex flex-col gap-2 sm:flex-row">
+            <div className="flex flex-col gap-3 sm:flex-row sm:gap-2">
               <div className="group flex flex-grow items-center overflow-hidden rounded-lg border border-neutral-300 bg-neutral-50 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 dark:border-neutral-700 dark:bg-neutral-800">
                 <input
                   type="text"
@@ -144,9 +157,9 @@ export default function Home() {
       </div>
 
       <div className="w-full max-w-4xl font-sans">
-        <h2 className="mb-4 text-4xl font-bold">Documentation</h2>
-        <div className="grid gap-6 sm:grid-cols-2">
-          <div className="rounded-xl border border-neutral-200 bg-white p-6 shadow-lg dark:border-neutral-800 dark:bg-neutral-900">
+        <h2 className="mb-4 text-2xl font-bold sm:text-4xl">Documentation</h2>
+        <div className="grid gap-4 sm:grid-cols-2 sm:gap-6">
+          <div className="rounded-xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-md dark:border-neutral-800 dark:bg-neutral-900">
             <h3 className="mb-3 text-xl font-bold text-blue-600 dark:text-blue-400">1. Image Mode</h3>
             <p className="mb-4 text-sm text-neutral-600 dark:text-neutral-400">
               If the URL points to an image (PNG, JPG, SVG, etc.), NEWSOrigin acts as a direct proxy, returning the image
@@ -156,14 +169,20 @@ export default function Home() {
               GET /get?url=example.com/image.png
             </div>
           </div>
-          <div className="rounded-xl border border-neutral-200 bg-white p-6 shadow-lg dark:border-neutral-800 dark:bg-neutral-900">
+          <div className="rounded-xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-md dark:border-neutral-800 dark:bg-neutral-900">
             <h3 className="mb-3 text-xl font-bold text-blue-600 dark:text-blue-400">2. News Mode</h3>
             <p className="mb-4 text-sm text-neutral-600 dark:text-neutral-400">
-              For web pages, NEWSOrigin extracts the Open Graph title and image, returning them as a JSON object for
-              easy consumption.
+              For web pages, NEWSOrigin extracts rich metadata including Open Graph and Twitter tags, returning a comprehensive JSON object.
             </p>
-            <div className="rounded bg-neutral-100 p-2 text-xs font-mono dark:bg-neutral-800">
-              {'{ "title": "...", "image": "..." }'}
+            <div className="rounded bg-neutral-100 p-3 text-xs font-mono dark:bg-neutral-800 overflow-x-auto">
+              <pre>{JSON.stringify({
+                title: "...",
+                description: "...",
+                siteName: "...",
+                image: "...",
+                favicon: "...",
+                url: "..."
+              }, null, 2)}</pre>
             </div>
           </div>
         </div>
@@ -197,9 +216,27 @@ export default function Home() {
                   </div>
                 )}
                 <div className="flex flex-col justify-center">
-                  <h3 className="mb-2 text-2xl font-bold">{metadata.title || "No title found"}</h3>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                    Extracted from Open Graph tags or page title.
+                  <div className="mb-2 flex items-center gap-2">
+                    {metadata.favicon && (
+                      <img
+                        src={metadata.favicon}
+                        alt="favicon"
+                        className="h-5 w-5"
+                        onError={(e) => (e.target.style.display = "none")}
+                      />
+                    )}
+                    {metadata.siteName && (
+                      <span className="text-sm font-medium text-blue-600 dark:text-blue-400">{metadata.siteName}</span>
+                    )}
+                  </div>
+                  <h3 className="mb-2 text-2xl font-bold leading-tight">{metadata.title || "No title found"}</h3>
+                  {metadata.description && (
+                    <p className="mb-4 text-sm text-neutral-600 dark:text-neutral-400 line-clamp-3">
+                      {metadata.description}
+                    </p>
+                  )}
+                  <p className="text-xs text-neutral-500 dark:text-neutral-500 italic break-all">
+                    Source: {metadata.url || url}
                   </p>
                 </div>
               </div>

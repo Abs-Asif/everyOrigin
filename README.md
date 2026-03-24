@@ -1,11 +1,44 @@
-# EveryOrigin CORS Proxy
+# NEWSOrigin CORS Proxy
 
-As I had A number of projects using data from other domains and I grew tired of having to use 3rd CORS proxies, which always seems to be unstable, slow, unsafe and short-lived. So, I decided to build my own.
+NEWSOrigin is a free, open-source CORS proxy optimized for news sites and general web content. It extracts rich metadata and proxies images, making it easy to consume content from any domain without CORS issues.
 
-I built EveryOrigin using Next.js and Next.js Api routes as back-end and hosted it on Vercel. The service is free and open-source.
+## Features
 
-The service is completely free to use and doesn't require any API key or rate limit.
+- **Image Proxy:** Directly proxy images (PNG, JPG, SVG, etc.) with correct CORS headers.
+- **Metadata Extraction:** Extract Open Graph and Twitter Card metadata (title, description, image, favicon, etc.) from any web page.
+- **No API Keys:** Use it immediately without registration or rate limits.
+- **Dynamic Protocol/Host Support:** Automatically adapts to your environment (development or production).
 
+## API Usage
+
+### 1. Proxy an Image
+
+Returns the image binary directly.
+
+```bash
+GET /get?url=https://example.com/image.png
+```
+
+### 2. Extract Metadata
+
+Returns a JSON object with the page's metadata.
+
+```bash
+GET /get?url=https://news.ycombinator.com
+```
+
+**Response Format:**
+
+```json
+{
+  "title": "Hacker News",
+  "description": "...",
+  "siteName": "...",
+  "image": "https://your-host.com/get?url=...",
+  "favicon": "https://your-host.com/get?url=...",
+  "url": "https://news.ycombinator.com"
+}
+```
 
 ## Getting Started
 

@@ -172,34 +172,31 @@ export default function Home() {
                   On-Device Proxy Active
                 </span>
               )}
-              <div className="ml-auto flex items-center gap-2 rounded-lg bg-neutral-100 p-0.5 text-[10px] dark:bg-neutral-800">
+              <div className="ml-auto flex items-center gap-1 rounded-lg bg-neutral-100 p-0.5 text-[10px] dark:bg-neutral-800">
                 <button
-                  className={`rounded px-1.5 py-0.5 transition-colors ${
-                    proxyMode === "auto" ? "bg-white shadow dark:bg-neutral-700" : "text-neutral-500"
+                  className={`rounded-md px-2 py-1 transition-all ${
+                    proxyMode === "auto" ? "bg-white font-bold shadow-sm dark:bg-neutral-700" : "text-neutral-500 hover:text-neutral-700"
                   }`}
                   onClick={() => setProxyMode("auto")}
-                  title="Automatically choose between device and server proxy"
                 >
                   Auto
                 </button>
                 <button
-                  className={`rounded px-1.5 py-0.5 transition-colors ${
-                    proxyMode === "device" ? "bg-white shadow dark:bg-neutral-700" : "text-neutral-500"
+                  className={`rounded-md px-2 py-1 transition-all ${
+                    proxyMode === "server" ? "bg-blue-600 font-bold text-white shadow-sm" : "text-neutral-500 hover:text-neutral-700"
+                  }`}
+                  onClick={() => setProxyMode("server")}
+                >
+                  Server-Side
+                </button>
+                <button
+                  className={`rounded-md px-2 py-1 transition-all ${
+                    proxyMode === "device" ? "bg-green-600 font-bold text-white shadow-sm" : "text-neutral-500 hover:text-neutral-700 disabled:opacity-30"
                   }`}
                   onClick={() => setProxyMode("device")}
                   disabled={!isClientSideProxy}
-                  title="Run Node logic on your device (browser)"
                 >
-                  Device
-                </button>
-                <button
-                  className={`rounded px-1.5 py-0.5 transition-colors ${
-                    proxyMode === "server" ? "bg-white shadow dark:bg-neutral-700" : "text-neutral-500"
-                  }`}
-                  onClick={() => setProxyMode("server")}
-                  title="Use server-side proxy (bypasses CORS)"
-                >
-                  Server
+                  On-Device
                 </button>
               </div>
             </div>
@@ -241,9 +238,11 @@ export default function Home() {
                 {loading ? "Fetching..." : "Execute"}
               </button>
             </div>
-            <div className="mt-3 flex items-center justify-between">
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                Tip: Enter any news article URL or image URL.
+                {proxyMode === 'server' && "🌐 Server mode: High reliability, bypasses CORS via backend."}
+                {proxyMode === 'device' && "💻 Device mode: Runs Node logic in your browser. Subject to CORS."}
+                {proxyMode === 'auto' && "⚡ Auto mode: Tries device first, falls back to server if needed."}
               </p>
               {fetchTime && (
                 <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
@@ -372,29 +371,59 @@ export default function Home() {
           </div>
 
           <div className="rounded-xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-md dark:border-neutral-800 dark:bg-neutral-900 sm:col-span-2 lg:col-span-3">
-            <h3 className="mb-3 text-xl font-bold text-blue-600 dark:text-blue-400">4. On-Device (Offline) Integration</h3>
-            <p className="mb-4 text-sm text-neutral-600 dark:text-neutral-400">
-              Enable NEWSOrigin entirely on the client-side of your website using Almostnode. This makes your integration self-sufficient and works offline by intercepting API calls and processing them in the user's browser.
-            </p>
-            <div className="mb-4 rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800 dark:border-yellow-900/30 dark:bg-yellow-900/20 dark:text-yellow-400">
-              <span className="font-bold">⚠️ Note:</span> Since extraction happens in your browser, it is subject to <span className="font-bold">CORS</span> restrictions. The server-side proxy is recommended for reliability unless the target site allows your origin.
-            </div>
-            <div className="mb-4">
-              <h4 className="mb-2 text-xs font-bold uppercase text-neutral-500">One-Line Integration</h4>
-              <div className="rounded bg-neutral-100 p-3 text-xs font-mono dark:bg-neutral-800 overflow-x-auto">
-                <pre>{`<script src="${protocol}//${host || "every-origin-ecru.vercel.app"}/newsorigin.js"></script>`}</pre>
+            <h3 className="mb-6 text-2xl font-bold">Choose Your Way</h3>
+            <div className="grid gap-8 md:grid-cols-2">
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white">1</div>
+                  <h4 className="text-lg font-bold text-blue-600 dark:text-blue-400">Way 1: Server-Side API</h4>
+                </div>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Standard REST API that bypasses CORS via our backend. Best for production use and maximum reliability.
+                </p>
+                <div className="space-y-3">
+                  <div>
+                    <h5 className="mb-1 text-[10px] font-bold uppercase text-neutral-500">API Endpoint</h5>
+                    <div className="rounded bg-neutral-100 p-2 text-[11px] font-mono dark:bg-neutral-800">
+                      {`${protocol}//${host || "every-origin-ecru.vercel.app"}/get?url=...`}
+                    </div>
+                  </div>
+                  <div>
+                    <h5 className="mb-1 text-[10px] font-bold uppercase text-neutral-500">Node/Fetch Example</h5>
+                    <div className="rounded bg-neutral-100 p-3 text-[11px] font-mono dark:bg-neutral-800 overflow-x-auto">
+                      <pre>{`const res = await fetch("${protocol}//${host || "every-origin-ecru.vercel.app"}/get?url=" + encodeURIComponent(url));\nconst data = await res.json();`}</pre>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-green-600 text-[10px] font-bold text-white">2</div>
+                  <h4 className="text-lg font-bold text-green-600 dark:text-green-400">Way 2: On-Device (Almostnode)</h4>
+                </div>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Self-sufficient integration that runs Node logic in the user's browser. Works offline and protects user privacy.
+                </p>
+                <div className="space-y-3">
+                  <div>
+                    <h5 className="mb-1 text-[10px] font-bold uppercase text-neutral-500">One-Line Script</h5>
+                    <div className="rounded bg-neutral-100 p-2 text-[11px] font-mono dark:bg-neutral-800">
+                      {`<script src="${protocol}//${host || "every-origin-ecru.vercel.app"}/newsorigin.js"></script>`}
+                    </div>
+                  </div>
+                  <div>
+                    <h5 className="mb-1 text-[10px] font-bold uppercase text-neutral-500">Helper Usage</h5>
+                    <div className="rounded bg-neutral-100 p-3 text-[11px] font-mono dark:bg-neutral-800 overflow-x-auto">
+                      <pre>{`// Automatically tries device first, falls back to server\nconst res = await newsorigin.fetch(url);\nconst data = await res.json();`}</pre>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-auto rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-[10px] text-yellow-800 dark:border-yellow-900/30 dark:bg-yellow-900/20 dark:text-yellow-400">
+                  <span className="font-bold">⚠️ Note:</span> Subject to browser CORS. Use for sites that allow your origin or when reliability isn't the primary concern.
+                </div>
               </div>
             </div>
-            <div className="mb-4">
-              <h4 className="mb-2 text-xs font-bold uppercase text-neutral-500">Usage Helper</h4>
-              <p className="mb-2 text-sm text-neutral-600 dark:text-neutral-400">The script exposes a global <code>newsorigin.fetch(url)</code> that automatically chooses the best method:</p>
-              <div className="rounded bg-neutral-100 p-3 text-xs font-mono dark:bg-neutral-800 overflow-x-auto">
-                <pre>{`const response = await newsorigin.fetch("https://news.ycombinator.com");\nconst data = await response.json();`}</pre>
-              </div>
-            </div>
-            <p className="text-sm text-neutral-600 dark:text-neutral-400">
-              When using the helper, extraction will attempt to run on your device first and automatically fallback to the server-side proxy if blocked by CORS.
-            </p>
           </div>
         </div>
       </div>

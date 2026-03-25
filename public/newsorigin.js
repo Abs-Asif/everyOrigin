@@ -2,39 +2,54 @@
   const SCRIPT_URL = new URL(document.currentScript.src);
   const BASE_URL = SCRIPT_URL.origin;
 
-  // Metadata Extraction Logic
+  /**
+   * Helper to convert an ArrayBuffer to a Base64 string safely even for large buffers.
+   */
+  async function bufferToBase64(buffer) {
+    return new Promise((resolve) => {
+      const blob = new Blob([buffer]);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const dataUrl = e.target.result;
+        resolve(dataUrl.split(",")[1]);
+      };
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  /**
+   * Metadata Extraction Logic
+   */
   async function extractMetadata(url) {
     if (!url.startsWith("http://") && !url.startsWith("https://")) url = "https://" + url;
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error("Fetch failed: " + resp.statusText);
+
+    let resp;
+    try {
+      resp = await fetch(url);
+    } catch (e) {
+      if (e.name === 'TypeError' && e.message === 'Failed to fetch') {
+        throw new Error("CORS_BLOCKED: The target website does not allow client-side access. Please use Server mode.");
+      }
+      throw e;
+    }
+
+    if (!resp.ok) throw new Error(`Fetch failed with status ${resp.status}`);
     const ct = resp.headers.get("content-type") || "";
-    if (ct.startsWith("image/")) return { isImage: true, contentType: ct, buffer: await resp.arrayBuffer() };
+
+    if (ct.startsWith("image/")) {
+      return { isImage: true, contentType: ct, buffer: await resp.arrayBuffer() };
+    }
 
     const html = await resp.text();
     const doc = new DOMParser().parseFromString(html, "text/html");
-    const $ = (arg) => {
-      let elements;
-      if (typeof arg === "string") {
-        elements = Array.from(doc.querySelectorAll(arg));
-      } else if (arg && arg._el) {
-        elements = [arg._el];
-      } else if (arg && arg.nodeType) {
-        elements = [arg];
-      } else {
-        elements = [];
-      }
-
-      const wrapper = {
-        attr: (name) => elements[0]?.getAttribute(name) || "",
-        text: () => elements[0]?.textContent || "",
-        each: (callback) => {
-          elements.forEach((el, i) => {
-            callback(i, { _el: el, attr: (n) => el.getAttribute(n) });
-          });
-        },
-        length: elements.length,
+    const $ = (s) => {
+      const el = doc.querySelector(s);
+      const els = Array.from(doc.querySelectorAll(s));
+      return {
+        attr: (n) => el?.getAttribute(n) || "",
+        text: () => el?.textContent || "",
+        each: (cb) => els.forEach((e, i) => cb(i, { attr: (n) => e.getAttribute(n) }))
       };
-      return wrapper;
     };
 
     const title = $('meta[property="og:title"]').attr("content") || $('meta[name="twitter:title"]').attr("content") || doc.title || "";
@@ -67,32 +82,25 @@
   window.newsorigin = {
     fetch: async (url, options = {}) => {
       try {
-        // Try on-device extraction first
         const result = await extractMetadata(url);
-
-        // If it's an image, we still need to return a Response
         if (result.isImage) {
-          return new Response(result.buffer, {
-            headers: { 'Content-Type': result.contentType }
-          });
+          return new Response(result.buffer, { headers: { 'Content-Type': result.contentType } });
         }
-
-        // For metadata, return a JSON response
-        return new Response(JSON.stringify(result), {
-          headers: { 'Content-Type': 'application/json' }
-        });
+        return new Response(JSON.stringify(result), { headers: { 'Content-Type': 'application/json' } });
       } catch (err) {
-        // Fallback to server-side proxy
+        // Automatic fallback to server-side proxy
+        console.warn("NEWSOrigin: On-device proxy failed, falling back to server.", err.message);
         const proxyUrl = `${BASE_URL}/get?url=${encodeURIComponent(url)}`;
         return fetch(proxyUrl, options);
       }
     }
   };
 
-  // Optional: SW-based interception for SAME ORIGIN only
+  // Same-origin SW setup
   if (window.location.origin === BASE_URL) {
     try {
-      const ALMOSTNODE_URL = 'https://cdn.jsdelivr.net/npm/almostnode@0.2.14/dist/index.mjs';
+      // Use esm.sh which automatically bundles dependencies like pako
+      const ALMOSTNODE_URL = 'https://esm.sh/almostnode@0.2.14';
       const { createContainer, getServerBridge } = await import(ALMOSTNODE_URL);
       const { vfs, runtime } = createContainer();
       const bridge = getServerBridge();
@@ -107,7 +115,7 @@
           try {
             const res = await extractMetadata(targetUrl);
             if (res.isImage) {
-              const bodyBase64 = btoa(new Uint8Array(res.buffer).reduce((d, b) => d + String.fromCharCode(b), ""));
+              const bodyBase64 = await bufferToBase64(res.buffer);
               return { statusCode: 200, headers: { "Content-Type": res.contentType }, bodyBase64 };
             }
             return { statusCode: 200, headers: { "Content-Type": "application/json" }, body: JSON.stringify(res) };
@@ -117,11 +125,11 @@
 
       bridge.registerServer(virtualServer, 80);
       window.NEWSOriginOnDevice = true;
-      console.log("NEWSOrigin: On-device proxy initialized with SW interception.");
+      console.log("NEWSOrigin: On-device proxy active (via Service Worker Bridge)");
     } catch (e) {
       console.warn("NEWSOrigin: On-device SW proxy failed to init.", e);
     }
   } else {
-    console.log("NEWSOrigin: Client-side helper initialized (CORS fallback to server). Use newsorigin.fetch(url) for automatic handling.");
+    console.log("NEWSOrigin: On-device helper ready. Use newsorigin.fetch(url) for automatic client/server proxying.");
   }
 })();

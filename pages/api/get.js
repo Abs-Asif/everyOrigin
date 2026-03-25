@@ -55,14 +55,43 @@ export default async function handler(req, res) {
 
     const siteName = $('meta[property="og:site_name"]').attr("content") || "";
 
-    let ogImage =
-      $('meta[property="og:image"]').attr("content") || $('meta[name="twitter:image"]').attr("content") || "";
+    // Image extraction and cleaning
+    const extractImages = () => {
+      const candidates = [];
+      const ogImages = $('meta[property="og:image"]');
+      ogImages.each((i, el) => {
+        const content = $(el).attr("content");
+        if (content) candidates.push(content);
+      });
 
-    let favicon =
-      $('link[rel="apple-touch-icon"]').attr("href") ||
-      $('link[rel="shortcut icon"]').attr("href") ||
-      $('link[rel="icon"]').attr("href") ||
-      "/favicon.ico";
+      const twitterImage = $('meta[name="twitter:image"]').attr("content");
+      if (twitterImage) candidates.push(twitterImage);
+
+      const imageSrc = $('link[rel="image_src"]').attr("href");
+      if (imageSrc) candidates.push(imageSrc);
+
+      // Featured image fallback for WordPress sites
+      const wpPostImage = $(".wp-post-image").attr("src");
+      if (wpPostImage) candidates.push(wpPostImage);
+
+      return [...new Set(candidates)];
+    };
+
+    const cleanImageUrl = (imageUrl) => {
+      if (!imageUrl) return "";
+      try {
+        const urlObj = new URL(imageUrl);
+        // Common watermark/social share params to strip
+        const paramsToStrip = ["watermark", "wm", "mark", "social_share", "share"];
+        paramsToStrip.forEach((p) => urlObj.searchParams.delete(p));
+        return urlObj.toString();
+      } catch (e) {
+        return imageUrl;
+      }
+    };
+
+    const allImages = extractImages();
+    let selectedImage = "";
 
     const urlObj = new URL(url);
 
@@ -76,12 +105,30 @@ export default async function handler(req, res) {
       }
     };
 
-    ogImage = resolveUrl(ogImage);
+    const resolvedImages = allImages.map(resolveUrl).filter((img) => !!img);
+
+    if (resolvedImages.length > 0) {
+      // Prioritize images that don't contain "watermark" in their path/name
+      const nonWatermarked = resolvedImages.filter((img) => !img.toLowerCase().includes("watermark"));
+      if (nonWatermarked.length > 0) {
+        selectedImage = cleanImageUrl(nonWatermarked[0]);
+      } else {
+        // If all have watermark, just pick the first and clean it
+        selectedImage = cleanImageUrl(resolvedImages[0]);
+      }
+    }
+
+    let favicon =
+      $('link[rel="apple-touch-icon"]').attr("href") ||
+      $('link[rel="shortcut icon"]').attr("href") ||
+      $('link[rel="icon"]').attr("href") ||
+      "/favicon.ico";
+
     favicon = resolveUrl(favicon);
 
     const host = req.headers.host;
     const protocol = req.headers["x-forwarded-proto"] || "http";
-    const proxiedOgImage = ogImage ? `${protocol}://${host}/get?url=${encodeURIComponent(ogImage)}` : "";
+    const proxiedOgImage = selectedImage ? `${protocol}://${host}/get?url=${encodeURIComponent(selectedImage)}` : "";
     const proxiedFavicon = favicon ? `${protocol}://${host}/get?url=${encodeURIComponent(favicon)}` : "";
 
     const responseData = {
@@ -91,6 +138,7 @@ export default async function handler(req, res) {
       image: proxiedOgImage,
       favicon: proxiedFavicon,
       url,
+      images: resolvedImages, // Keep all resolved for debugging/advanced use
     };
 
     if (fields) {

@@ -9,6 +9,7 @@ import { useRouter } from "next/router";
 import { triggerLoader } from "@/lib/utils";
 import { toast } from "react-toastify";
 import { ClipboardDocumentListIcon, XMarkIcon } from "@heroicons/react/20/solid";
+import Link from "next/link";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -120,9 +121,23 @@ export default function Home() {
         <h2 className="mt-2 text-center text-lg font-medium opacity-80 sm:text-2xl md:text-3xl">
           Free CORS proxy for news
         </h2>
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
+          <Link
+            href="/fb"
+            className="rounded-full bg-blue-600 px-6 py-2 text-sm font-bold text-white transition-all hover:bg-blue-700 active:scale-95"
+          >
+            FB Post Extractor
+          </Link>
+          <a
+            href="#usage"
+            className="rounded-full border border-neutral-300 px-6 py-2 text-sm font-bold transition-all hover:bg-neutral-100 active:scale-95 dark:border-neutral-700 dark:hover:bg-neutral-800"
+          >
+            API Usage
+          </a>
+        </div>
       </div>
 
-      <div className="w-full max-w-4xl font-sans">
+      <div id="usage" className="w-full max-w-4xl font-sans">
         <h2 className="mb-4 text-2xl font-bold sm:text-4xl">Usage</h2>
         <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-lg dark:border-neutral-800 dark:bg-neutral-900">
           <div className="flex items-center gap-2 border-b border-neutral-200 bg-neutral-50 px-3 py-2 sm:px-4 dark:border-neutral-800 dark:bg-neutral-800/50">

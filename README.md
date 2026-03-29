@@ -1,30 +1,31 @@
-# NEWSOrigin CORS Proxy
+# Daily Bangladesh News Archive
 
-NEWSOrigin is a free, open-source CORS proxy optimized for news sites and general web content. It extracts rich metadata and proxies images, making it easy to consume content from any domain without CORS issues.
+Daily Bangladesh is a dedicated application for fetching and displaying the latest news and archive data from daily-bangladesh.com.
 
 ## Features
 
+- **Latest News Archive:** Fetch latest news directly from the Daily Bangladesh backoffice API.
 - **Image Proxy:** Directly proxy images (PNG, JPG, SVG, etc.) with correct CORS headers.
-- **Metadata Extraction:** Extract Open Graph and Twitter Card metadata (title, description, image, favicon, etc.) from any web page.
+- **Metadata Extraction:** Extract metadata from Daily Bangladesh articles.
 - **No API Keys:** Use it immediately without registration or rate limits.
 - **Dynamic Protocol/Host Support:** Automatically adapts to your environment (development or production).
 
 ## API Usage
 
-### 1. Proxy an Image
+### 1. Fetch News Archive
+
+Returns a list of latest news from the Daily Bangladesh archive.
+
+```bash
+GET /get
+```
+
+### 2. Proxy an Image
 
 Returns the image binary directly.
 
 ```bash
 GET /get?url=https://example.com/image.png
-```
-
-### 2. Extract Metadata
-
-Returns a JSON object with the page's metadata.
-
-```bash
-GET /get?url=https://news.ycombinator.com
 ```
 
 ### 3. Field Filtering

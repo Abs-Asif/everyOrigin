@@ -13,8 +13,39 @@ export default async function handler(req, res) {
     return res.status(400).json({ success: false, error: `Unhandled request method: ${method}` });
   }
 
+  const host = req.headers.host;
+  const protocol = req.headers["x-forwarded-proto"] || "http";
+
+  // If no URL is provided, fetch the Daily Bangladesh archive
   if (!url) {
-    return res.status(400).json({ error: "URL is required" });
+    try {
+      const response = await fetch("https://backoffice.daily-bangladesh.com/api-en/archive", {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch archive: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      // Transform archive data to include proxied images
+      const transformedData = (data.archive_data || []).map(item => {
+        const fullImageUrl = `https://backoffice.daily-bangladesh.com/media/imgAll/${item.ImageBgPath}`;
+        return {
+          ...item,
+          ImageThumbPath: item.ImageThumbPath ? `https://backoffice.daily-bangladesh.com/media/imgAll/${item.ImageThumbPath}` : "",
+          ImageSmPath: item.ImageSmPath ? `https://backoffice.daily-bangladesh.com/media/imgAll/${item.ImageSmPath}` : "",
+          ImageBgPath: item.ImageBgPath ? fullImageUrl : "",
+          proxiedImage: item.ImageBgPath ? `${protocol}://${host}/get?url=${encodeURIComponent(fullImageUrl)}` : ""
+        };
+      });
+
+      return res.status(200).json({ archive_data: transformedData });
+    } catch (error) {
+      console.error("Error fetching archive:", error);
+      return res.status(500).json({ error: error.message || "Internal Server Error" });
+    }
   }
 
   try {
@@ -126,8 +157,6 @@ export default async function handler(req, res) {
 
     favicon = resolveUrl(favicon);
 
-    const host = req.headers.host;
-    const protocol = req.headers["x-forwarded-proto"] || "http";
     const proxiedOgImage = selectedImage ? `${protocol}://${host}/get?url=${encodeURIComponent(selectedImage)}` : "";
     const proxiedFavicon = favicon ? `${protocol}://${host}/get?url=${encodeURIComponent(favicon)}` : "";
 

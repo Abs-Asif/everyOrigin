@@ -33,6 +33,7 @@ export default function Home() {
       setHost(window.location.host);
       setProtocol(window.location.protocol);
     }
+    fetchData(); // Fetch archive on mount
   }, []);
 
   const sampleCode = `const response = await fetch("${protocol}//${
@@ -48,10 +49,15 @@ export default function Home() {
     setFetchTime(null);
     const start = Date.now();
     try {
-      if (!url) throw new Error("URL is required");
-      const validUrl = new URL(!url.includes("http://") && !url.includes("https://") ? `https://${url}` : url);
       setLoading(true);
-      const response = await fetch(`/api/get?url=${encodeURIComponent(validUrl.toString())}`);
+      let fetchUrl = "/api/get";
+      let normalizedUrl = url;
+      if (url) {
+        const validUrl = new URL(!url.includes("http://") && !url.includes("https://") ? `https://${url}` : url);
+        normalizedUrl = validUrl.toString();
+        fetchUrl += `?url=${encodeURIComponent(normalizedUrl)}`;
+      }
+      const response = await fetch(fetchUrl);
 
       if (!response.ok) {
         let errorMessage = `Fetch failed with status ${response.status}: ${response.statusText}`;
@@ -70,7 +76,7 @@ export default function Home() {
         setMetadata(data);
       } else if (contentType && contentType.startsWith("image/")) {
         // It's a direct image, we can show it as well
-        setMetadata({ title: "Image Proxy Result", image: `/api/get?url=${encodeURIComponent(validUrl.toString())}` });
+        setMetadata({ title: "Image Proxy Result", image: `/api/get?url=${encodeURIComponent(normalizedUrl)}` });
       } else {
         throw new Error("Unexpected response from API");
       }
@@ -105,20 +111,20 @@ export default function Home() {
       className={`flex min-h-screen flex-col items-center justify-between gap-6 p-4 pt-10 text-neutral-900 sm:gap-12 sm:p-12 md:p-24 dark:text-neutral-100 ${inter.className}`}
     >
       <Head>
-        <title>NEWSOrigin</title>
+        <title>Daily Bangladesh</title>
         <meta
           name="description"
-          content="NEWSOrigin is a free CORS proxy for news sites. Get metadata and images without CORS issues."
+          content="Daily Bangladesh is your source for the latest news from Bangladesh and around the world."
         />
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
       <div className="relative m-auto flex flex-col items-center after:absolute after:top-0 after:-z-20 after:h-[180px] after:w-[180px] after:animate-[pulse_10s_ease-in-out_infinite] after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] after:sm:w-[360px] before:lg:h-[360px] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700/10 after:dark:from-sky-900 after:dark:via-[#0141ff]/40">
         <h1 className="text-center text-4xl font-extrabold tracking-tight sm:text-6xl" style={{ overflowWrap: "anywhere" }}>
-          NEWSOrigin
+          Daily Bangladesh
         </h1>
         <h2 className="mt-2 text-center text-lg font-medium opacity-80 sm:text-2xl md:text-3xl">
-          Free CORS proxy for news
+          Latest News and Archive
         </h2>
       </div>
 
@@ -190,53 +196,87 @@ export default function Home() {
       {metadata && !loading && (
         <TransitionScroll baseStyle={baseStyle} hiddenStyle={hiddenStyle} className="w-full max-w-4xl">
           <div className="flex flex-col gap-6">
-            <div className="relative overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-xl dark:border-neutral-800 dark:bg-neutral-900">
-              <div className="flex items-center justify-between border-b border-neutral-200 bg-neutral-50 px-4 py-2 dark:border-neutral-800 dark:bg-neutral-800/50">
-                <span className="text-sm font-semibold">Result Preview</span>
-                <button
-                  className="rounded-full p-1 transition-colors hover:bg-neutral-200 dark:hover:bg-neutral-700"
-                  onClick={() => setMetadata(null)}
-                >
-                  <XMarkIcon className="h-5 w-5" />
-                </button>
-              </div>
-              <div className="flex flex-col p-6 sm:flex-row gap-6">
-                {metadata.image && (
-                  <div className="relative h-48 w-full shrink-0 overflow-hidden rounded-lg sm:w-64">
-                    <img
-                      src={metadata.image}
-                      alt={metadata.title}
-                      className="h-full w-full object-cover"
-                      onError={(e) => (e.target.style.display = "none")}
-                    />
+            {metadata.archive_data ? (
+              <div className="grid gap-6 sm:grid-cols-2">
+                {metadata.archive_data.map((item) => (
+                  <div key={item.ContentID} className="overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-lg dark:border-neutral-800 dark:bg-neutral-900">
+                    {item.proxiedImage && (
+                      <div className="relative h-48 w-full overflow-hidden">
+                        <img
+                          src={item.proxiedImage}
+                          alt={item.ContentHeading}
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                    )}
+                    <div className="p-4">
+                      <div className="mb-2 flex items-center gap-2">
+                        <span className="text-xs font-bold uppercase text-blue-600 dark:text-blue-400">{item.CategoryName}</span>
+                        <span className="text-xs text-neutral-500">{item.create_date}</span>
+                      </div>
+                      <h3 className="mb-2 text-lg font-bold leading-tight line-clamp-2">{item.ContentHeading}</h3>
+                      <p className="text-sm text-neutral-600 dark:text-neutral-400 line-clamp-3">{item.ContentBrief}</p>
+                      <a
+                        href={`https://www.daily-bangladesh.com/english/${item.Slug}/${item.ContentID}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-4 inline-block text-sm font-bold text-blue-600 hover:underline dark:text-blue-400"
+                      >
+                        Read More →
+                      </a>
+                    </div>
                   </div>
-                )}
-                <div className="flex flex-col justify-center">
-                  <div className="mb-2 flex items-center gap-2">
-                    {metadata.favicon && (
+                ))}
+              </div>
+            ) : (
+              <div className="relative overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-xl dark:border-neutral-800 dark:bg-neutral-900">
+                <div className="flex items-center justify-between border-b border-neutral-200 bg-neutral-50 px-4 py-2 dark:border-neutral-800 dark:bg-neutral-800/50">
+                  <span className="text-sm font-semibold">Result Preview</span>
+                  <button
+                    className="rounded-full p-1 transition-colors hover:bg-neutral-200 dark:hover:bg-neutral-700"
+                    onClick={() => setMetadata(null)}
+                  >
+                    <XMarkIcon className="h-5 w-5" />
+                  </button>
+                </div>
+                <div className="flex flex-col p-6 sm:flex-row gap-6">
+                  {metadata.image && (
+                    <div className="relative h-48 w-full shrink-0 overflow-hidden rounded-lg sm:w-64">
                       <img
-                        src={metadata.favicon}
-                        alt="favicon"
-                        className="h-5 w-5"
+                        src={metadata.image}
+                        alt={metadata.title}
+                        className="h-full w-full object-cover"
                         onError={(e) => (e.target.style.display = "none")}
                       />
-                    )}
-                    {metadata.siteName && (
-                      <span className="text-sm font-medium text-blue-600 dark:text-blue-400">{metadata.siteName}</span>
-                    )}
-                  </div>
-                  <h3 className="mb-2 text-2xl font-bold leading-tight">{metadata.title || "No title found"}</h3>
-                  {metadata.description && (
-                    <p className="mb-4 text-sm text-neutral-600 dark:text-neutral-400 line-clamp-3">
-                      {metadata.description}
-                    </p>
+                    </div>
                   )}
-                  <p className="text-xs text-neutral-500 dark:text-neutral-500 italic break-all">
-                    Source: {metadata.url || url}
-                  </p>
+                  <div className="flex flex-col justify-center">
+                    <div className="mb-2 flex items-center gap-2">
+                      {metadata.favicon && (
+                        <img
+                          src={metadata.favicon}
+                          alt="favicon"
+                          className="h-5 w-5"
+                          onError={(e) => (e.target.style.display = "none")}
+                        />
+                      )}
+                      {metadata.siteName && (
+                        <span className="text-sm font-medium text-blue-600 dark:text-blue-400">{metadata.siteName}</span>
+                      )}
+                    </div>
+                    <h3 className="mb-2 text-2xl font-bold leading-tight">{metadata.title || "No title found"}</h3>
+                    {metadata.description && (
+                      <p className="mb-4 text-sm text-neutral-600 dark:text-neutral-400 line-clamp-3">
+                        {metadata.description}
+                      </p>
+                    )}
+                    <p className="text-xs text-neutral-500 dark:text-neutral-500 italic break-all">
+                      Source: {metadata.url || url}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-xl dark:border-neutral-800 dark:bg-neutral-900">
               <div className="flex justify-between border-b border-neutral-200 bg-slate-700 px-4 py-2 text-white">
@@ -263,7 +303,7 @@ export default function Home() {
           <div className="rounded-xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-md dark:border-neutral-800 dark:bg-neutral-900">
             <h3 className="mb-3 text-xl font-bold text-blue-600 dark:text-blue-400">1. Image Mode</h3>
             <p className="mb-4 text-sm text-neutral-600 dark:text-neutral-400">
-              If the URL points to an image (PNG, JPG, SVG, etc.), NEWSOrigin acts as a direct proxy, returning the image
+              If the URL points to an image (PNG, JPG, SVG, etc.), Daily Bangladesh acts as a direct proxy, returning the image
               binary with the correct headers.
             </p>
             <div className="rounded bg-neutral-100 p-2 text-xs font-mono dark:bg-neutral-800">
@@ -273,7 +313,7 @@ export default function Home() {
           <div className="rounded-xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-md dark:border-neutral-800 dark:bg-neutral-900">
             <h3 className="mb-3 text-xl font-bold text-blue-600 dark:text-blue-400">2. News Mode</h3>
             <p className="mb-4 text-sm text-neutral-600 dark:text-neutral-400">
-              For web pages, NEWSOrigin extracts rich metadata including Open Graph and Twitter tags, returning a comprehensive JSON object.
+              For web pages, Daily Bangladesh extracts rich metadata including Open Graph and Twitter tags, returning a comprehensive JSON object.
             </p>
             <div className="rounded bg-neutral-100 p-3 text-xs font-mono dark:bg-neutral-800 overflow-x-auto">
               <pre>{JSON.stringify({

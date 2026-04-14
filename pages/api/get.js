@@ -22,10 +22,43 @@ export default async function handler(req, res) {
       url = "https://" + url;
     }
 
-    const response = await fetch(encodeURI(url));
+    const userAgents = [
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+      "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+      "facebookexternalhit/1.1",
+      "WhatsApp/2.21.12.21 A",
+    ];
 
-    if (!response.ok) {
-      throw new Error(`Failed to fetch: ${response.statusText}`);
+    let response;
+    let lastError;
+    const normalizedUrl = encodeURI(decodeURI(url));
+
+    for (const ua of userAgents) {
+      try {
+        response = await fetch(normalizedUrl, {
+          headers: {
+            "User-Agent": ua,
+            Accept:
+              "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+            "Accept-Language": "en-US,en;q=0.9,bn;q=0.8",
+            Referer: "https://www.google.com/",
+            "Cache-Control": "no-cache",
+            Pragma: "no-cache",
+          },
+        });
+
+        if (response.ok) break;
+        if (response.status !== 403 && response.status !== 404) break;
+
+        lastError = `Failed to fetch: ${response.status} ${response.statusText}`;
+      } catch (e) {
+        lastError = e.message;
+      }
+    }
+
+    if (!response || !response.ok) {
+      throw new Error(lastError || `Failed to fetch: ${response?.statusText || "Unknown error"}`);
     }
 
     const contentType = response.headers.get("content-type") || "";
@@ -58,21 +91,62 @@ export default async function handler(req, res) {
     // Image extraction and cleaning
     const extractImages = () => {
       const candidates = [];
-      const ogImages = $('meta[property="og:image"]');
-      ogImages.each((i, el) => {
-        const content = $(el).attr("content");
-        if (content) candidates.push(content);
-      });
+
+      // Open Graph and Twitter
+      $('meta[property="og:image"], meta[property="og:image:url"], meta[property="og:image:secure_url"]').each(
+        (i, el) => {
+          const content = $(el).attr("content");
+          if (content) candidates.push(content);
+        }
+      );
 
       const twitterImage = $('meta[name="twitter:image"]').attr("content");
       if (twitterImage) candidates.push(twitterImage);
 
+      // Link tags
       const imageSrc = $('link[rel="image_src"]').attr("href");
       if (imageSrc) candidates.push(imageSrc);
 
-      // Featured image fallback for WordPress sites
-      const wpPostImage = $(".wp-post-image").attr("src");
-      if (wpPostImage) candidates.push(wpPostImage);
+      // Schema.org ImageObject
+      $('script[type="application/ld+json"]').each((i, el) => {
+        try {
+          const json = JSON.parse($(el).html());
+          const findImages = (obj) => {
+            if (!obj || typeof obj !== "object") return;
+            if (obj.image) {
+              if (typeof obj.image === "string") candidates.push(obj.image);
+              else if (Array.isArray(obj.image))
+                obj.image.forEach((img) => {
+                  if (typeof img === "string") candidates.push(img);
+                  else if (img.url) candidates.push(img.url);
+                });
+              else if (obj.image.url) candidates.push(obj.image.url);
+            }
+            if (obj.thumbnailUrl) candidates.push(obj.thumbnailUrl);
+            Object.values(obj).forEach(findImages);
+          };
+          findImages(json);
+        } catch (e) {
+          // Ignore JSON parse errors
+        }
+      });
+
+      // Common CMS featured image patterns
+      const selectors = [
+        ".wp-post-image",
+        ".post-thumbnail img",
+        ".featured-image img",
+        ".entry-content img",
+        "article img",
+        ".main-content img",
+        "#main-content img",
+      ];
+      selectors.forEach((s) => {
+        $(s).each((i, el) => {
+          const src = $(el).attr("src") || $(el).attr("data-src") || $(el).attr("data-lazy-src");
+          if (src) candidates.push(src);
+        });
+      });
 
       return [...new Set(candidates)];
     };
@@ -81,9 +155,29 @@ export default async function handler(req, res) {
       if (!imageUrl) return "";
       try {
         const urlObj = new URL(imageUrl);
-        // Common watermark/social share params to strip
-        const paramsToStrip = ["watermark", "wm", "mark", "social_share", "share"];
-        paramsToStrip.forEach((p) => urlObj.searchParams.delete(p));
+        // Common watermark/social share/tracking params to strip
+        const paramsToStrip = [
+          "watermark",
+          "wm",
+          "mark",
+          "social_share",
+          "share",
+          "utm_source",
+          "utm_medium",
+          "utm_campaign",
+          "fbclid",
+          "gclid",
+        ];
+        paramsToStrip.forEach((p) => {
+          urlObj.searchParams.delete(p);
+          // Also check for prefix matches like watermark_path
+          for (const key of urlObj.searchParams.keys()) {
+            if (key.startsWith(p + "_") || key.startsWith(p + "-")) {
+              urlObj.searchParams.delete(key);
+            }
+          }
+        });
+
         return urlObj.toString();
       } catch (e) {
         return imageUrl;

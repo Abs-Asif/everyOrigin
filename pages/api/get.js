@@ -286,6 +286,39 @@ export default async function handler(req, res) {
 
     favicon = resolveUrl(favicon);
 
+    let numPages = 0;
+    if (url.includes("nhentai.net")) {
+      // Common selectors for nhentai page count
+      const infoText = $("#info").text();
+      const pagesMatch = infoText.match(/(\d+)\s+pages/i);
+      if (pagesMatch) {
+        numPages = parseInt(pagesMatch[1]);
+      } else {
+        // Fallback to searching specific tag containers
+        $(".tag-container").each((i, el) => {
+          const text = $(el).text();
+          if (/pages/i.test(text)) {
+            const count = $(el).find(".name").text();
+            if (count && !isNaN(count)) {
+              numPages = parseInt(count);
+            }
+          }
+        });
+      }
+
+      // If still not found, try searching all divs for the pattern
+      if (!numPages) {
+        $("div").each((i, el) => {
+          const text = $(el).text().trim();
+          const match = text.match(/^(\d+)\s+pages$/i);
+          if (match) {
+            numPages = parseInt(match[1]);
+            return false;
+          }
+        });
+      }
+    }
+
     const host = req.headers.host;
     const protocol = req.headers["x-forwarded-proto"] || "http";
     const proxiedOgImage = selectedImage ? `${protocol}://${host}/get?url=${encodeURIComponent(selectedImage)}` : "";
@@ -298,6 +331,7 @@ export default async function handler(req, res) {
       image: proxiedOgImage,
       favicon: proxiedFavicon,
       url,
+      numPages,
       images: resolvedImages, // Keep all resolved for debugging/advanced use
     };
 

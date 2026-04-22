@@ -225,12 +225,12 @@ export default function HentaiOrigin() {
                         ))}
                     </div>
                     ) : (
-                    <div className="relative flex w-full flex-col items-center bg-black min-h-screen">
-                        <div className="group relative w-full flex justify-center h-full">
+                    <div className="relative flex w-full flex-col items-center bg-black">
+                        <div className="group relative w-full flex justify-center overflow-hidden">
                             <img
                                 src={getImageUrl(currentPage)}
                                 alt={`Page ${currentPage}`}
-                                className="max-w-full max-h-screen object-contain"
+                                className="max-w-full h-auto"
                             />
                             {/* Navigation Areas */}
                             <div

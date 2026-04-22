@@ -288,13 +288,34 @@ export default async function handler(req, res) {
 
     let numPages = 0;
     if (url.includes("nhentai.net")) {
+      // Common selectors for nhentai page count
       const infoText = $("#info").text();
       const pagesMatch = infoText.match(/(\d+)\s+pages/i);
       if (pagesMatch) {
         numPages = parseInt(pagesMatch[1]);
       } else {
-        const tagMatch = $(".tag-container:contains('Pages') .name").text();
-        if (tagMatch) numPages = parseInt(tagMatch);
+        // Fallback to searching specific tag containers
+        $(".tag-container").each((i, el) => {
+          const text = $(el).text();
+          if (/pages/i.test(text)) {
+            const count = $(el).find(".name").text();
+            if (count && !isNaN(count)) {
+              numPages = parseInt(count);
+            }
+          }
+        });
+      }
+
+      // If still not found, try searching all divs for the pattern
+      if (!numPages) {
+        $("div").each((i, el) => {
+          const text = $(el).text().trim();
+          const match = text.match(/^(\d+)\s+pages$/i);
+          if (match) {
+            numPages = parseInt(match[1]);
+            return false;
+          }
+        });
       }
     }
 

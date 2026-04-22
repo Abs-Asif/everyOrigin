@@ -13,3 +13,5 @@
  GET /nhentai 200 in 4660ms
  GET /nhentai 200 in 33ms
  ✓ Compiled in 497ms (388 modules)
+ ✓ Compiled in 2.9s (242 modules)
+ ✓ Compiled in 358ms (302 modules)

@@ -388,7 +388,6 @@ export default async function handler(req, res) {
       url,
       numPages,
       images: resolvedImages, // Keep all resolved for debugging/advanced use
-      html,
       meta: metaTags,
       headings,
       links: allLinks,

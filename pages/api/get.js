@@ -324,6 +324,61 @@ export default async function handler(req, res) {
     const proxiedOgImage = selectedImage ? `${protocol}://${host}/get?url=${encodeURIComponent(selectedImage)}` : "";
     const proxiedFavicon = favicon ? `${protocol}://${host}/get?url=${encodeURIComponent(favicon)}` : "";
 
+    // Extract all meta tags
+    const metaTags = [];
+    $("meta").each((i, el) => {
+      const attributes = $(el).attr();
+      metaTags.push(attributes);
+    });
+
+    // Extract headings
+    const headings = {
+      h1: [],
+      h2: [],
+      h3: [],
+      h4: [],
+      h5: [],
+      h6: [],
+    };
+    ["h1", "h2", "h3", "h4", "h5", "h6"].forEach((tag) => {
+      $(tag).each((i, el) => {
+        headings[tag].push($(el).text().trim());
+      });
+    });
+
+    // Extract all links
+    const allLinks = [];
+    $("a").each((i, el) => {
+      const href = $(el).attr("href");
+      if (href) {
+        const resolved = resolveUrl(href);
+        if (resolved && !allLinks.includes(resolved)) {
+          allLinks.push(resolved);
+        }
+      }
+    });
+
+    // Extract all images
+    const extractedImages = [];
+    $("img").each((i, el) => {
+      const src = $(el).attr("src") || $(el).attr("data-src") || $(el).attr("data-lazy-src");
+      if (src) {
+        const resolved = resolveUrl(src);
+        if (resolved && !extractedImages.includes(resolved)) {
+          extractedImages.push(`${protocol}://${host}/get?url=${encodeURIComponent(resolved)}`);
+        }
+      }
+    });
+
+    // Extract all JSON-LD
+    const jsonLdBlocks = [];
+    $('script[type="application/ld+json"]').each((i, el) => {
+      try {
+        const json = JSON.parse($(el).html());
+        jsonLdBlocks.push(json);
+      } catch (e) {}
+    });
+
     const responseData = {
       title,
       description,
@@ -333,6 +388,12 @@ export default async function handler(req, res) {
       url,
       numPages,
       images: resolvedImages, // Keep all resolved for debugging/advanced use
+      html,
+      meta: metaTags,
+      headings,
+      links: allLinks,
+      allImages: extractedImages,
+      jsonLd: jsonLdBlocks,
     };
 
     if (fields) {

@@ -6,12 +6,14 @@
   - Local:        http://localhost:3000
 
  ✓ Starting...
- ✓ Ready in 1367ms
- ○ Compiling /nhentai ...
- ✓ Compiled /nhentai in 4s (388 modules)
- ✓ Compiled in 371ms (388 modules)
- GET /nhentai 200 in 4660ms
- GET /nhentai 200 in 33ms
- ✓ Compiled in 497ms (388 modules)
- ✓ Compiled in 2.9s (242 modules)
- ✓ Compiled in 358ms (302 modules)
+ ✓ Ready in 1295ms
+ ○ Compiling /json ...
+ ✓ Compiled /json in 5.4s (426 modules)
+ ✓ Compiled in 359ms (426 modules)
+ GET /json 200 in 6218ms
+ ○ Compiling /api/get ...
+ ✓ Compiled /api/get in 1051ms (149 modules)
+ GET /api/get?url=https%3A%2F%2Fexample.com%2F 200 in 1407ms
+ GET /api/get?url=https%3A%2F%2Fexample.com%2F&fields=links 200 in 30ms
+ GET /api/get?url=https%3A%2F%2Fexample.com%2F&fields=links,title 200 in 30ms
+ ✓ Compiled in 1740ms (426 modules)

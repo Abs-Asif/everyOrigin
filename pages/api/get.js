@@ -286,6 +286,18 @@ export default async function handler(req, res) {
 
     favicon = resolveUrl(favicon);
 
+    let numPages = 0;
+    if (url.includes("nhentai.net")) {
+      const infoText = $("#info").text();
+      const pagesMatch = infoText.match(/(\d+)\s+pages/i);
+      if (pagesMatch) {
+        numPages = parseInt(pagesMatch[1]);
+      } else {
+        const tagMatch = $(".tag-container:contains('Pages') .name").text();
+        if (tagMatch) numPages = parseInt(tagMatch);
+      }
+    }
+
     const host = req.headers.host;
     const protocol = req.headers["x-forwarded-proto"] || "http";
     const proxiedOgImage = selectedImage ? `${protocol}://${host}/get?url=${encodeURIComponent(selectedImage)}` : "";
@@ -298,6 +310,7 @@ export default async function handler(req, res) {
       image: proxiedOgImage,
       favicon: proxiedFavicon,
       url,
+      numPages,
       images: resolvedImages, // Keep all resolved for debugging/advanced use
     };
 

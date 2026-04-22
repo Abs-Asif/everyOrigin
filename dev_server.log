@@ -1,0 +1,15 @@
+
+> everyorigin@0.1.0 dev
+> next dev
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:3000
+
+ ✓ Starting...
+ ✓ Ready in 1367ms
+ ○ Compiling /nhentai ...
+ ✓ Compiled /nhentai in 4s (388 modules)
+ ✓ Compiled in 371ms (388 modules)
+ GET /nhentai 200 in 4660ms
+ GET /nhentai 200 in 33ms
+ ✓ Compiled in 497ms (388 modules)

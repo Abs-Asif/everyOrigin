@@ -305,7 +305,7 @@ export default function JSONOrigin() {
           <div className="rounded-xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-md dark:border-neutral-800 dark:bg-neutral-900">
             <h3 className="mb-3 text-xl font-bold text-orange-600 dark:text-orange-400">2. Structured Data</h3>
             <p className="mb-4 text-sm text-neutral-600 dark:text-neutral-400">
-              Data is returned in a clean, predictable JSON format that's easy to integrate into your projects.
+              Data is returned in a clean, predictable JSON format that&apos;s easy to integrate into your projects.
             </p>
             <div className="rounded bg-neutral-100 p-3 text-xs font-mono dark:bg-neutral-800 overflow-x-auto">
               <pre>{JSON.stringify({

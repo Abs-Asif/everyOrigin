@@ -7,6 +7,10 @@ const nextConfig = {
         source: "/get",
         destination: "/api/get",
       },
+      {
+        source: "/v2/get",
+        destination: "/api/v2/get",
+      },
     ];
   },
 };

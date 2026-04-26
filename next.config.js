@@ -1,6 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  experimental: {
+    outputFileTracingIncludes: {
+      "/api/*": ["./node_modules/puppeteer-extra-plugin-stealth/evasions/**/*"],
+    },
+  },
   async rewrites() {
     return [
       {
@@ -15,4 +20,4 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig
+module.exports = nextConfig;

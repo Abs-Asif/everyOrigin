@@ -1,4 +1,5 @@
 import * as cheerio from "cheerio";
+import { proxyFetch } from "../../lib/proxyFetcher";
 
 export default async function handler(req, res) {
   const { method } = req;
@@ -22,87 +23,28 @@ export default async function handler(req, res) {
       url = "https://" + url;
     }
 
-    const userAgents = [
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-      "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
-      "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
-      "Mozilla/5.0 (compatible; Googlebot-News; +http://www.google.com/bot.html)",
-      "facebookexternalhit/1.1",
-      "WhatsApp/2.21.12.21 A",
-      "Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)",
-      "LinkedInBot/1.0 (compatible; Mozilla/5.0; Jakarta Commons-HttpClient/3.1 +http://www.linkedin.com)",
-      "TelegramBot (like Twitterbot)",
-      "Slackbot-LinkExpanding 1.0 (+https://api.slack.com/robots)",
-    ];
-
-    let response;
-    let lastError;
     const normalizedUrl = encodeURI(decodeURI(url));
-
-    const getHeaders = (ua) => {
-      const headers = {
-        "User-Agent": ua,
-        Accept:
-          "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-        "Accept-Language": "en-US,en;q=0.9,bn;q=0.8",
-        Referer: "https://www.google.com/",
-        "Cache-Control": "no-cache",
-        Pragma: "no-cache",
-      };
-
-      if (ua.includes("Chrome")) {
-        headers["Sec-Ch-Ua"] = '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"';
-        headers["Sec-Ch-Ua-Mobile"] = ua.includes("Mobile") ? "?1" : "?0";
-        headers["Sec-Ch-Ua-Platform"] = ua.includes("Windows") ? '"Windows"' : ua.includes("iPhone") ? '"iOS"' : '"Linux"';
-        headers["Sec-Fetch-Dest"] = "document";
-        headers["Sec-Fetch-Mode"] = "navigate";
-        headers["Sec-Fetch-Site"] = "none";
-        headers["Sec-Fetch-User"] = "?1";
-        headers["Upgrade-Insecure-Requests"] = "1";
-      }
-
-      return headers;
-    };
-
-    for (const ua of userAgents) {
-      try {
-        response = await fetch(normalizedUrl, {
-          headers: getHeaders(ua),
-        });
-
-        if (response.ok) break;
-
-        lastError = `Failed to fetch: ${response.status} ${response.statusText}`;
-
-        // Don't retry on 404
-        if (response.status === 404) {
-          break;
-        }
-
-        // Wait a bit before retrying if we hit rate limits or challenges
-        if (response.status === 403 || response.status === 429 || response.status === 503) {
-          await new Promise((resolve) => setTimeout(resolve, 500));
-        }
-      } catch (e) {
-        lastError = e.message;
-      }
-    }
+    const response = await proxyFetch(normalizedUrl);
 
     if (!response || !response.ok) {
-      throw new Error(lastError || `Failed to fetch: ${response?.statusText || "Unknown error"}`);
+      throw new Error(response?.statusText || `Failed to fetch: ${response?.status || "Unknown error"}`);
     }
 
-    const contentType = response.headers.get("content-type") || "";
+    const contentType =
+      (typeof response.headers.get === "function" ? response.headers.get("content-type") : response.headers["content-type"]) ||
+      "";
 
     if (contentType.startsWith("image/")) {
-      const arrayBuffer = await response.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
+      const buffer = await response.buffer();
       res.setHeader("Content-Type", contentType);
       return res.status(200).send(buffer);
     }
 
     // Not an image, process as HTML/News
     const html = await response.text();
+    if (!html) {
+      throw new Error("Empty response body");
+    }
     const $ = cheerio.load(html);
 
     const isPlaceholder = (text) => {

@@ -3,7 +3,11 @@ const nextConfig = {
   reactStrictMode: true,
   experimental: {
     outputFileTracingIncludes: {
-      "/api/*": ["./node_modules/puppeteer-extra-plugin-stealth/evasions/**/*"],
+      "/api/*": [
+        "./node_modules/puppeteer-extra-plugin-stealth/evasions/**/*",
+        "./node_modules/puppeteer-extra-plugin-user-preferences/**/*",
+        "./node_modules/puppeteer-extra-plugin-user-data-dir/**/*",
+      ],
     },
   },
   async rewrites() {
